@@ -12,6 +12,7 @@ cfg = [];
 
 cfg.path = 'G:\My Drive\PROJECTS\VNS Targeted Platicity\ECoG_Data\';
 
+cfg.trialfun = 'ft_oe_trialfun';
 
 
 % cfg.experiment = 'Mangrove_2021-05-12_12-12-24_ToneClouds';
@@ -33,19 +34,19 @@ cfg.path = 'G:\My Drive\PROJECTS\VNS Targeted Platicity\ECoG_Data\';
 % cfg.baphystimformat = '%*s%f%f%*[^\n]';
 % cfg.node = '100';
 
-cfg.experiment = 'Mangrove_2021-05-20_11-49-21_Clicks'; % OpenEphys data folder
-cfg.trialdef.skiptriggers = 1:2;
-cfg.trialdef.prestim = 1;
-cfg.trialdef.poststim = 1;
-cfg.baphystimformat = '%*s%f%*[^\n]';
-cfg.node = '100';
-
-% cfg.experiment = 'Mangrove_2021-05-26_12-30-31_Clicks'; % OpenEphys data folder
+% cfg.experiment = 'Mangrove_2021-05-20_11-49-21_Clicks'; % OpenEphys data folder
 % cfg.trialdef.skiptriggers = 1:2;
 % cfg.trialdef.prestim = 1;
 % cfg.trialdef.poststim = 1;
 % cfg.baphystimformat = '%*s%f%*[^\n]';
 % cfg.node = '100';
+
+cfg.experiment = 'Mangrove_2021-05-26_12-30-31_Clicks'; % OpenEphys data folder
+cfg.trialdef.skiptriggers = 1:2;
+cfg.trialdef.prestim = 1;
+cfg.trialdef.poststim = 1;
+cfg.baphystimformat = '%*s%f%*[^\n]';
+cfg.node = '100';
 
 
 % cfg.experiment = 'Mangrove_2021-05-27_11-32-07_ClicksSE'; % OpenEphys data folder
@@ -56,10 +57,17 @@ cfg.node = '100';
 % cfg.node = '100';
 
 
+% % cfg.experiment = 'Mangrove_2021-05-14_10-26-09_Bhvr';
+% cfg.experiment = 'Mangrove_2021-05-13_10-20-40_Bhvr';
+% % cfg.experiment = 'Mangrove_2021-05-12_11-39-03_Bhvr';
+% % cfg.experiment = 'Mangrove_2021-05-05_12-18-31_Bhvr';
+% cfg.trialdef.prestim = 1;
+% cfg.trialdef.poststim = 1;
+% cfg.trialfun = 'ft_oe_trialfun_bhvr';
+
 
 cfg.channelmapfile = 'G:\My Drive\PROJECTS\VNS Targeted Platicity\ECoG_Data\ECoG_channel_map.mat';
 
-cfg.trialfun = 'ft_oe_trialfun';
 
 tcfg = ft_definetrial(cfg);
 [rawdata,tcfg] = ft_read_oe_data(tcfg);
@@ -98,7 +106,7 @@ databip.trial{1}(ind,:) = [];
 databip.label(ind) = [];
 
 posNew(ind,:) = [];
-layout.pos(1:size(posNew,1),:) = posNew;
+layout.pos = [posNew; layout.pos(end-1:end,:)];
 layout.label(ind) = [];
 layout.width(ind,:) = [];
 layout.height(ind,:) = [];
@@ -111,24 +119,24 @@ fprintf(' done\n')
 
 
 
-%% weighted mean neighbour channel derivation - **** UNVERIFIED ****
-% reject common sources by subtracting out mean activity of neighboring
-% channels inversly weighted by distance.
-distThreshold = 1.5;
-fprintf('Applying bipolar derivation with distance threshold <= %.2f mm ...',distThreshold)
-databip = rawdata;
-pos = layout.pos(1:end-2,:);
-n = size(pos,1);
-for i = 1:n
-    d = vecnorm(pos(i,:) - pos,2,2); % distance to all other electrodes
-    id = 1 ./ d;
-    ind = d > 0 & d <= distThreshold;
-    databip.trial{1}(i,:) = rawdata.trial{1}(i,:) - mean(id(ind).*rawdata.trial{1}(ind,:),1);
-end
-
-rawdata = databip;
-clear databip
-fprintf(' done\n')
+% %% weighted mean neighbour channel derivation - **** UNVERIFIED ****
+% % reject common sources by subtracting out mean activity of neighboring
+% % channels inversly weighted by distance.
+% distThreshold = 1.5;
+% fprintf('Applying bipolar derivation with distance threshold <= %.2f mm ...',distThreshold)
+% databip = rawdata;
+% pos = layout.pos(1:end-2,:);
+% n = size(pos,1);
+% for i = 1:n
+%     d = vecnorm(pos(i,:) - pos,2,2); % distance to all other electrodes
+%     id = 1 ./ d;
+%     ind = d > 0 & d <= distThreshold;
+%     databip.trial{1}(i,:) = rawdata.trial{1}(i,:) - mean(id(ind).*rawdata.trial{1}(ind,:),1);
+% end
+% 
+% rawdata = databip;
+% clear databip
+% fprintf(' done\n')
 
 
 % %% rawdata -> CSD rawdata
@@ -150,13 +158,6 @@ fprintf(' done\n')
 % cfg.elec = 'c:\src\oeCode\NN_32chECoG_electrodes.elc';
 % rawdata = ft_scalpcurrentdensity(cfg,rawdata);
  
-
-% %% resample the data
-% cfg            = [];
-% cfg.resamplefs = 400;
-% cfg.detrend    = 'yes';
-% rawdata = ft_resampledata(cfg, rawdata);
-% rawdata.sampleinfo = [1 length(rawdata.time{1})];
 %% Preprocess rawdata -> data
 cfg = [];
 cfg.lpfilter = 'yes';
@@ -182,6 +183,29 @@ data = ft_preprocessing(cfg,rawdata);
 data = ft_redefinetrial(tcfg,data);
 
 
+
+%% Identify trial types for behavior
+
+trialData = [data.cfg.event.trialData];
+
+indTarg = [trialData.TrialType] == bhvr.TrialType.Target;
+indRef  = [trialData.TrialType] == bhvr.TrialType.Reference;
+indHit  = [trialData.Response]  == bhvr.Response.HIT;
+indMiss = [trialData.Response]  == bhvr.Response.MISS;
+indFA   = [trialData.Response]  == bhvr.Response.FALSE_ALARM;
+indCR   = [trialData.Response]  == bhvr.Response.CORRECT_REJECT;
+
+
+fprintf('#References = %d:\t#Correct Rejects = %d\t#False Alarms = %d\n',sum(indRef),sum(indCR),sum(indFA))
+fprintf('#Targets = %d:\t\t#Hits = %d\t\t\t\t#Misses = %d\n',sum(indTarg),sum(indHit),sum(indMiss))
+
+
+
+%% resample the data
+cfg            = [];
+cfg.resamplefs = 600;
+cfg.detrend    = 'no';
+data = ft_resampledata(cfg, data);
 
 
 

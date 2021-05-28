@@ -42,9 +42,10 @@ offsetSample = round(data.fsample*(stimparam.stdur./1000))+onsetSample;
 svec = onsetSample:offsetSample;
 
 figure
-pos = layout.pos(1:32,:) + 1;
+pos = layout.pos(1:end-2,:) + 1;
 pos(:,2) = max(pos(:,2)) - pos(:,2) + 1;
-mlp = max(pos);
+pos = fix(pos);
+mlp = [7 4];
 
 t = tiledlayout(mlp(2),mlp(1));
 t.TileSpacing = 'compact';

@@ -54,8 +54,8 @@ cfg.hpfreq = 2;
 
 cfg.reref = 'no';
 % cfg.reref = 'yes';
-cfg.refchannel = 'all';
-cfg.refmethod = 'avg';
+% cfg.refchannel = 'all';
+% cfg.refmethod = 'avg';
 
 % cfg.hilbert = 'abs';
 

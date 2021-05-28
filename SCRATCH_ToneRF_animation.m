@@ -9,11 +9,11 @@ remMean = false;
 
 window = [0 0.1]; %s
 windowStepSize = 0.001; % s
-windowDuration = 0.005; % s
+windowDuration = 0.01; % s
 
 
-% metric = 'mean';
-metric = 'rms';
+metric = 'mean';
+% metric = 'rms';
 % metric = 'std';
 % metric = 'max';
 % metric = 'min';
@@ -108,9 +108,11 @@ for tm = 1:length(tvec)
     
     f.Name = nmstr;
     f.NumberTitle = 'off';
-    pos = layout.pos(1:32,:) + 1;
+    
+    pos = layout.pos(1:end-2,:) + 1;
     pos(:,2) = max(pos(:,2)) - pos(:,2) + 1;
-    mlp = max(pos);
+    pos = fix(pos);
+    mlp = [7 4];
     
     t = tiledlayout(mlp(2),mlp(1));
     t.TileSpacing = 'compact';
@@ -153,8 +155,8 @@ end
 
 %% write video of animation
 
-note = '70-150Hz_BIP_abshilbert_highRes';
-% note = '2-150Hz_BIP';
+% note = '70-150Hz_BIP_abshilbert_highRes';
+note = '2-150Hz_BIP';
 
 vpath = 'G:\My Drive\PROJECTS\VNS Targeted Platicity\ECoG\';
 vfn = sprintf('ToneRFanimation_%s_%s-%s',data.cfg.experiment,metric,note);
